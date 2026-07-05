@@ -1,0 +1,1314 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>برنامه‌ریز هفتگی</title>
+<meta name="theme-color" content="#1F5E52">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800;900&family=Lalezar&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F1EEE4;
+    --paper-2:#E9E4D6;
+    --surface:#FFFFFF;
+    --ink:#20261F;
+    --muted:#8B8878;
+    --border:#DFDACB;
+    --fixed:#1F5E52;
+    --fixed-soft:#DEEEE9;
+    --variable:#C77B2E;
+    --variable-soft:#F7E9D6;
+    --done:#3F7D63;
+    --danger:#B4483A;
+    --gold:#D99A2B;
+    --blob1: rgba(31,94,82,0.11);
+    --blob2: rgba(199,123,46,0.12);
+    --radius:18px;
+    --shadow-sm:0 2px 8px -2px rgba(32,38,31,.12);
+    --shadow-md:0 14px 30px -12px rgba(32,38,31,.30);
+  }
+  html[data-theme="dark"]{
+    --paper:#181C17;
+    --paper-2:#1F241D;
+    --surface:#20261F;
+    --ink:#EDEAE0;
+    --muted:#8F9589;
+    --border:#333A30;
+    --fixed:#45B79A;
+    --fixed-soft:#1D3129;
+    --variable:#E29A54;
+    --variable-soft:#3A2A19;
+    --done:#4FBF98;
+    --danger:#E0776A;
+    --gold:#F0BE55;
+    --blob1: rgba(69,183,154,0.14);
+    --blob2: rgba(226,154,84,0.12);
+    --shadow-sm:0 2px 10px -2px rgba(0,0,0,.55);
+    --shadow-md:0 16px 34px -14px rgba(0,0,0,.65);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper); color:var(--ink);
+    font-family:'Vazirmatn', Tahoma, sans-serif;
+    min-height:100vh; display:flex; justify-content:center;
+    transition:background .3s ease, color .3s ease;
+  }
+  .bg-blob{position:fixed; width:62vw; height:62vw; max-width:440px; max-height:440px; border-radius:50%;
+    filter:blur(64px); z-index:0; pointer-events:none; transition:background .3s ease; will-change:transform;}
+  .blob1{top:-8%; right:-12%; background:var(--blob1);}
+  .blob2{bottom:6%; left:-16%; background:var(--blob2);}
+
+  .app{width:100%; max-width:480px; min-height:100vh; display:flex; flex-direction:column;
+    padding:20px 14px 110px; position:relative; z-index:1; animation:appIn .35s ease;}
+  @keyframes appIn{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
+
+  header{display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:14px; gap:8px;}
+  .title-block h1{
+    font-family:'Lalezar','Vazirmatn',Tahoma,sans-serif; font-weight:400;
+    font-size:27px; margin:0 0 2px; letter-spacing:.2px;
+    background:linear-gradient(90deg, var(--ink), var(--fixed) 140%);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .title-block p{margin:0; font-size:12.5px; color:var(--muted); font-weight:600; letter-spacing:.2px;}
+  .header-actions{display:flex; gap:6px;}
+  .icon-btn{
+    width:37px;height:37px; border-radius:50%; border:1px solid var(--border);
+    background:var(--surface); display:flex;align-items:center;justify-content:center;
+    cursor:pointer; color:var(--ink); transition:transform .15s ease, box-shadow .15s ease;
+    position:relative; box-shadow:var(--shadow-sm);
+  }
+  .icon-btn:active{transform:scale(0.9);}
+  .icon-btn:focus-visible{outline:2px solid var(--fixed); outline-offset:2px;}
+
+  .streak-pill{
+    display:flex; align-items:center; gap:6px;
+    background:linear-gradient(135deg, color-mix(in srgb, var(--gold) 12%, var(--surface)), var(--surface));
+    border:1px solid var(--border); box-shadow:var(--shadow-sm);
+    border-radius:99px; padding:7px 14px; margin-bottom:12px; width:fit-content;
+    font-size:12.5px; font-weight:700; color:var(--gold);
+  }
+
+  .week-nav{display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;}
+  .week-nav .range{font-size:13px; font-weight:600; color:var(--muted);}
+  .nav-arrows{display:flex; gap:6px;}
+  .nav-arrows button{
+    width:30px;height:30px; border-radius:9px; border:1px solid var(--border);
+    background:var(--surface); cursor:pointer; display:flex;align-items:center;justify-content:center; color:var(--ink);
+  }
+  .nav-arrows button:active{background:var(--fixed-soft);}
+  .today-btn{width:auto !important; border-radius:99px; padding:0 14px; font-size:12px; font-weight:700;}
+
+  .day-strip{display:flex; gap:7px; overflow-x:auto; padding:6px 3px 16px; scroll-snap-type:x proximity;}
+  .day-strip::-webkit-scrollbar{display:none;}
+  .day-tab{
+    flex:0 0 auto; width:54px; padding:11px 0 9px;
+    clip-path: polygon(0 0, 100% 0, 100% 82%, 50% 100%, 0 82%);
+    background:var(--surface); border:1px solid var(--border); border-bottom:none;
+    display:flex;flex-direction:column;align-items:center;gap:5px; cursor:pointer;
+    position:relative; scroll-snap-align:center; transition:transform .18s ease, box-shadow .18s ease, background .18s ease;
+    box-shadow:var(--shadow-sm);
+  }
+  .day-tab .wd{font-size:11px; font-weight:700; color:var(--muted);}
+  .day-tab .num{font-size:15.5px; font-weight:800; font-variant-numeric:tabular-nums;}
+  .day-tab .dot{width:5px;height:5px;border-radius:50%;background:var(--variable); opacity:.6;}
+  .day-tab.is-fixed .dot{background:var(--fixed); opacity:.85;}
+  .day-tab.is-today{border-color:var(--ink); border-width:1.5px;}
+  .day-tab.is-active{background:linear-gradient(160deg, var(--ink), color-mix(in srgb, var(--ink) 80%, var(--fixed)));
+    transform:translateY(-6px); box-shadow:var(--shadow-md);}
+  .day-tab.is-active .wd, .day-tab.is-active .num{color:var(--paper);}
+  .day-tab.is-active .dot{background:var(--gold); opacity:1;}
+  .day-tab .bar{width:26px;height:3px;border-radius:2px;background:var(--border);overflow:hidden;margin-top:2px;}
+  .day-tab .bar i{display:block;height:100%;background:var(--fixed);border-radius:2px;}
+  .day-tab.is-active .bar{background:rgba(255,255,255,.18);}
+  .day-tab.is-active .bar i{background:var(--gold);}
+
+  .panel{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:18px 16px 14px; flex:1; box-shadow:var(--shadow-md);}
+  .panel-head{display:flex;align-items:center;justify-content:space-between; margin-bottom:14px;}
+  .panel-head .day-name{font-size:17px; font-weight:800; letter-spacing:-.2px;}
+  .chip{font-size:11px; font-weight:700; padding:5px 12px; border-radius:99px;}
+  .chip.fixed{background:var(--fixed-soft); color:var(--fixed);}
+  .chip.variable{background:var(--variable-soft); color:var(--variable);}
+
+  .progress-row{display:flex;align-items:center;gap:8px; margin-bottom:6px;}
+  .progress-track{flex:1;height:6px;border-radius:4px;background:var(--paper);overflow:hidden;}
+  .progress-track i{display:block;height:100%;background:var(--done);border-radius:4px;transition:width .25s ease;}
+  .progress-label{font-size:11.5px;color:var(--muted);font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap;}
+  .estimate-label{font-size:11px; color:var(--muted); font-weight:600; margin-bottom:12px;}
+
+  .copy-yesterday{
+    display:flex; align-items:center; justify-content:center; gap:6px;
+    background:var(--variable-soft); color:var(--variable); border:none;
+    border-radius:12px; padding:10px; font-size:12.5px; font-weight:700;
+    width:100%; margin-bottom:12px; cursor:pointer; font-family:inherit;
+  }
+
+  .items{display:flex;flex-direction:column;gap:8px;margin-bottom:14px;}
+  .item{display:flex;align-items:flex-start;gap:8px; padding:10px 10px; background:var(--paper); border-radius:13px; border-right:3px solid transparent; transition:opacity .2s ease, background .2s ease;}
+  .item.priority{border-right-color:var(--gold); background:linear-gradient(90deg, color-mix(in srgb, var(--gold) 10%, var(--paper)), var(--paper) 45%);}
+  .item.done{opacity:.5;}
+  .reorder-col{display:flex;flex-direction:column;gap:2px; padding-top:2px;}
+  .reorder-col button{
+    width:18px;height:16px;border:none;background:transparent;color:var(--muted);cursor:pointer;
+    display:flex;align-items:center;justify-content:center; padding:0;
+  }
+  .reorder-col button:disabled{opacity:.2; cursor:default;}
+  .checkbox{
+    width:22px;height:22px; border-radius:7px; border:2px solid var(--border); flex:0 0 auto; margin-top:2px;
+    cursor:pointer; display:flex;align-items:center;justify-content:center; background:var(--surface);
+    transition:background .15s ease, border-color .15s ease;
+  }
+  .checkbox.checked{background:var(--done); border-color:var(--done);}
+  .checkbox svg{width:13px;height:13px; opacity:0; transition:opacity .1s ease;}
+  .checkbox.checked svg{opacity:1;}
+  .item-main{flex:1; display:flex; flex-direction:column; gap:4px; min-width:0;}
+  .item-text{
+    font-size:14.5px; font-weight:500; background:transparent; border:none; outline:none;
+    color:var(--ink); padding:2px 0; width:100%;
+  }
+  .item.done .item-text{text-decoration:line-through; color:var(--muted);}
+  .item-meta{display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
+  .item-time, .item-duration{
+    border:none; background:transparent; color:var(--muted); font-size:11.5px; font-weight:600;
+    font-family:inherit; padding:0;
+  }
+  .item-time{width:62px;}
+  .item-duration{width:52px;}
+  .tag-dot{width:14px;height:14px;border-radius:50%; border:1.5px solid var(--border); cursor:pointer; flex:0 0 auto;}
+  .item-actions{display:flex; align-items:center; gap:2px; flex:0 0 auto;}
+  .star-btn, .item-del{
+    width:26px;height:26px; border-radius:8px; border:none; background:transparent; color:var(--muted);
+    cursor:pointer; display:flex;align-items:center;justify-content:center; flex:0 0 auto;
+  }
+  .star-btn.active{color:var(--gold);}
+  .item-del:active{background:color-mix(in srgb, var(--danger) 15%, var(--paper)); color:var(--danger);}
+
+  .day-note{
+    width:100%; border:1px dashed var(--border); border-radius:12px; background:var(--paper);
+    padding:10px 12px; font-family:inherit; font-size:12.5px; color:var(--ink); resize:none;
+    outline:none; margin-bottom:12px; min-height:44px;
+  }
+  .day-note:focus{border-color:var(--fixed);}
+
+  .focus-btn{
+    display:flex; align-items:center; justify-content:center; gap:6px; width:100%;
+    background:var(--fixed-soft); color:var(--fixed); border:none; border-radius:12px;
+    padding:10px; font-size:12.5px; font-weight:700; margin-bottom:12px; cursor:pointer; font-family:inherit;
+  }
+
+  .empty-state{text-align:center; padding:22px 10px 14px; color:var(--muted);}
+  .empty-state p{margin:0 0 2px; font-size:13.5px; font-weight:600;}
+  .empty-state span{font-size:12px;}
+
+  .add-row{display:flex;gap:8px; border-top:1px dashed var(--border); padding-top:12px;}
+  .add-row input{
+    flex:1; border:1px solid var(--border); border-radius:12px; padding:11px 12px;
+    font-family:inherit; font-size:13.5px; background:var(--paper); outline:none; color:var(--ink);
+  }
+  .add-row input:focus{border-color:var(--fixed);}
+  .add-row button{
+    width:42px;height:42px; border-radius:12px; border:none; background:var(--ink); color:var(--paper);
+    cursor:pointer; display:flex;align-items:center;justify-content:center; flex:0 0 auto;
+  }
+  .add-row button:active{transform:scale(.94);}
+
+  .fab{
+    position:fixed; bottom:22px; left:calc(50% + 190px);
+    width:56px; height:56px; border-radius:50%; border:none; cursor:pointer; z-index:40;
+    background:linear-gradient(150deg, var(--fixed), color-mix(in srgb, var(--fixed) 70%, black));
+    color:#fff; display:flex; align-items:center; justify-content:center; box-shadow:var(--shadow-md);
+    transition:transform .12s ease;
+  }
+  .fab:active{transform:scale(.92);}
+  @media (max-width:480px){ .fab{ left:auto; right:20px; } }
+
+  .overlay{position:fixed; inset:0; background:rgba(10,10,8,.5); display:flex; align-items:flex-end; justify-content:center; z-index:50; animation:fade .15s ease;}
+  @keyframes fade{from{opacity:0;}to{opacity:1;}}
+  .modal{width:100%; max-width:480px; background:var(--surface); border-radius:24px 24px 0 0; padding:14px 18px 26px; max-height:88vh; overflow-y:auto; box-shadow:0 -12px 30px -10px rgba(0,0,0,.4);}
+  .modal::before{content:''; display:block; width:38px; height:4px; border-radius:99px; background:var(--border); margin:0 auto 16px;}
+  .modal h2{font-size:17.5px; font-weight:800; margin:0 0 4px;}
+  .modal .sub{font-size:12.5px; color:var(--muted); margin:0 0 16px; font-weight:500; line-height:1.7;}
+  .weekday-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:18px;}
+  .weekday-pill{
+    padding:11px 4px; text-align:center; border-radius:12px; border:1.5px solid var(--border);
+    font-size:12.5px;font-weight:700; cursor:pointer; color:var(--muted); background:var(--paper);
+  }
+  .weekday-pill.selected{border-color:var(--fixed); background:var(--fixed-soft); color:var(--fixed);}
+  .template-block{border:1px solid var(--border); border-radius:14px; padding:12px; margin-bottom:12px;}
+  .template-block .tb-title{font-size:13px;font-weight:700;margin-bottom:8px;color:var(--fixed);}
+  .modal-actions{display:flex;gap:10px;margin-top:6px;}
+  .btn{flex:1; padding:13px; border-radius:13px; border:none; font-family:inherit; font-size:13.5px; font-weight:700; cursor:pointer; transition:transform .12s ease;}
+  .btn.primary{background:linear-gradient(135deg, var(--ink), color-mix(in srgb, var(--ink) 80%, var(--fixed))); color:var(--paper); box-shadow:var(--shadow-sm);}
+  .btn.ghost{background:var(--paper); color:var(--ink); border:1px solid var(--border);}
+  .btn:active{transform:scale(.97);}
+  .btn:disabled{opacity:.4;}
+
+  .section-title{font-size:13.5px; font-weight:800; margin:18px 0 10px; color:var(--ink);}
+  .notif-row{display:flex; align-items:center; justify-content:space-between; border:1px solid var(--border); border-radius:12px; padding:12px; margin-bottom:12px;}
+  .notif-row span{font-size:12.5px; font-weight:600;}
+  .notif-status{font-size:11px; font-weight:700; color:var(--muted);}
+  .notif-status.on{color:var(--fixed);}
+
+  .row-actions{display:flex; gap:8px;}
+  .small-input{border:1px solid var(--border); border-radius:10px; padding:8px 10px; font-family:inherit; font-size:12.5px; background:var(--paper); color:var(--ink); outline:none;}
+
+  .tabs{display:flex; gap:6px; overflow-x:auto; margin-bottom:16px; padding-bottom:2px;}
+  .tabs::-webkit-scrollbar{display:none;}
+  .tab-btn{flex:0 0 auto; padding:8px 13px; border-radius:99px; border:1px solid var(--border); background:var(--paper); color:var(--muted); font-size:12px; font-weight:700; cursor:pointer;}
+  .tab-btn.active{background:var(--ink); color:var(--paper); border-color:var(--ink);}
+
+  .heatmap-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:5px; margin-bottom:6px;}
+  .heat-cell{aspect-ratio:1; border-radius:6px; background:var(--paper);}
+  .heat-labels{display:flex; justify-content:space-between; font-size:10px; color:var(--muted); margin-bottom:10px;}
+
+  .summary-row{margin-bottom:16px;}
+  .summary-row .sr-head{display:flex; justify-content:space-between; font-size:12.5px; font-weight:700; margin-bottom:6px;}
+  .summary-track{height:10px; border-radius:6px; background:var(--paper); overflow:hidden;}
+  .summary-track i{display:block; height:100%; border-radius:6px;}
+
+  .insight-row{display:flex; align-items:center; gap:10px; margin-bottom:10px;}
+  .insight-row .wd-label{width:60px; font-size:12px; font-weight:700; color:var(--muted); flex:0 0 auto;}
+  .insight-row .track{flex:1; height:10px; border-radius:6px; background:var(--paper); overflow:hidden;}
+  .insight-row .track i{display:block; height:100%; border-radius:6px; background:var(--fixed);}
+  .insight-row .val{width:36px; text-align:left; font-size:11.5px; font-weight:700; color:var(--muted); flex:0 0 auto;}
+
+  .history-list{display:flex; flex-direction:column; gap:8px;}
+  .history-item{display:flex; align-items:center; justify-content:space-between; padding:11px 12px; background:var(--paper); border-radius:12px; cursor:pointer;}
+  .history-item .h-date{font-size:12.5px; font-weight:700;}
+  .history-item .h-stat{font-size:11.5px; font-weight:700; color:var(--muted);}
+
+  .search-input-row{display:flex; gap:8px; margin-bottom:14px;}
+  .search-input-row input{flex:1; border:1px solid var(--border); border-radius:12px; padding:11px 12px; font-family:inherit; font-size:13.5px; background:var(--paper); outline:none; color:var(--ink);}
+  .search-result{display:flex; align-items:center; justify-content:space-between; padding:11px 12px; background:var(--paper); border-radius:12px; margin-bottom:8px; cursor:pointer;}
+  .search-result .sr-text{font-size:13px; font-weight:600;}
+  .search-result .sr-date{font-size:11px; color:var(--muted); font-weight:600;}
+
+  .focus-overlay{position:fixed; inset:0; background:var(--ink); z-index:60; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:30px; color:var(--paper); text-align:center;}
+  .focus-overlay .fo-progress{font-size:12px; opacity:.6; margin-bottom:10px; font-weight:700;}
+  .focus-overlay .fo-text{font-size:24px; font-weight:800; margin-bottom:34px; line-height:1.5;}
+  .focus-overlay .fo-actions{display:flex; gap:12px; width:100%; max-width:320px;}
+  .focus-overlay button{flex:1; padding:15px; border-radius:14px; border:none; font-family:inherit; font-size:14px; font-weight:700; cursor:pointer;}
+  .fo-done{background:var(--done); color:#fff;}
+  .fo-skip{background:rgba(255,255,255,.12); color:var(--paper);}
+  .fo-close{position:absolute; top:22px; left:22px; width:38px;height:38px; border-radius:50%; background:rgba(255,255,255,.12); color:var(--paper); border:none; display:flex; align-items:center; justify-content:center; cursor:pointer;}
+  .fo-empty{font-size:16px; font-weight:700; opacity:.85;}
+
+  .confetti-piece{position:fixed; top:-10px; width:8px;height:14px; border-radius:2px; z-index:80; pointer-events:none;}
+  @keyframes confetti-fall{ to{ transform: translateY(105vh) rotate(540deg); opacity:0; } }
+</style>
+</head>
+<body>
+<div class="bg-blob blob1" id="blob1"></div>
+<div class="bg-blob blob2" id="blob2"></div>
+<div class="app" id="app"></div>
+
+<script>
+/* ---------------- API ---------------- */
+const api = {
+  getSettings: () => fetch('/api/settings').then(r=>r.json()),
+  putSettings: (s) => fetch('/api/settings', {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(s)}).then(r=>r.json()),
+  getDays: (start,end) => fetch(`/api/days?start=${start}&end=${end}`).then(r=>r.json()),
+  putDay: (iso, data) => fetch(`/api/day/${iso}`, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)}).then(r=>r.json()),
+  search: (q) => fetch(`/api/search?q=${encodeURIComponent(q)}`).then(r=>r.json()),
+  exportData: () => fetch('/api/export').then(r=>r.json()),
+  importData: (data) => fetch('/api/import', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)}).then(r=>r.json()),
+};
+
+const WEEKDAYS = ["شنبه","یکشنبه","دوشنبه","سه‌شنبه","چهارشنبه","پنج‌شنبه","جمعه"];
+const WEEKDAYS_SHORT = ["ش","ی","د","س","چ","پ","ج"];
+const TAGS = [
+  {key:null, label:'بدون برچسب', color:'transparent'},
+  {key:'work', label:'کار', color:'#3B6EA5'},
+  {key:'health', label:'سلامتی', color:'#3F7D63'},
+  {key:'personal', label:'شخصی', color:'#C77B2E'},
+  {key:'study', label:'درس', color:'#8B5FBF'},
+];
+
+let state = {
+  settings: null,
+  weekOffset: 0,
+  activeDate: null,
+  cache: {},
+  loadedMin: null,
+  loadedMax: null,
+  loaded: false,
+  notifiedToday: new Set(),
+  focusQueue: null,
+  focusIdx: 0,
+};
+
+function pad(n){ return String(n).padStart(2,'0'); }
+function toISO(d){ return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
+function addDays(d, n){ const c = new Date(d); c.setDate(c.getDate()+n); return c; }
+function startOfToday(){ const t = new Date(); t.setHours(0,0,0,0); return t; }
+function getWeekStart(baseDate, offset){
+  const d = new Date(baseDate); d.setDate(d.getDate()+offset*7);
+  const sinceSat = (d.getDay()+1)%7;
+  d.setDate(d.getDate()-sinceSat); d.setHours(0,0,0,0);
+  return d;
+}
+function jsDowToPersianIndex(jsDow){ return (jsDow+1)%7; }
+function uid(){ return Math.random().toString(36).slice(2,9); }
+function escapeAttr(s){ return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+function tagOf(key){ return TAGS.find(t=>t.key===key) || TAGS[0]; }
+
+/* ---------------- theme + parallax ---------------- */
+function initTheme(){
+  const saved = localStorage.getItem('planner-theme');
+  if(saved === 'dark') document.documentElement.setAttribute('data-theme','dark');
+}
+function toggleTheme(){
+  const isDark = document.documentElement.getAttribute('data-theme')==='dark';
+  if(isDark){ document.documentElement.removeAttribute('data-theme'); localStorage.setItem('planner-theme','light'); }
+  else { document.documentElement.setAttribute('data-theme','dark'); localStorage.setItem('planner-theme','dark'); }
+  render();
+}
+function initParallax(){
+  let ticking=false;
+  function apply(){
+    const y = window.scrollY || 0;
+    const b1 = document.getElementById('blob1'), b2 = document.getElementById('blob2');
+    if(b1) b1.style.transform = `translateY(${y*0.22}px) scale(${1+Math.min(y*0.0006,0.3)})`;
+    if(b2) b2.style.transform = `translateY(${-y*0.16}px) scale(${1+Math.min(y*0.0004,0.25)})`;
+    ticking=false;
+  }
+  window.addEventListener('scroll', ()=>{ if(!ticking){ requestAnimationFrame(apply); ticking=true; } }, {passive:true});
+  apply();
+}
+function registerSW(){
+  if('serviceWorker' in navigator){
+    window.addEventListener('load', ()=> navigator.serviceWorker.register('/sw.js').catch(()=>{}));
+  }
+}
+
+/* ---------------- init ---------------- */
+async function init(){
+  initTheme();
+  initParallax();
+  registerSW();
+  state.settings = await api.getSettings();
+  const today = startOfToday();
+  state.activeDate = toISO(today);
+  state.loaded = true;
+  if(!state.settings){ render(); return; }
+  await loadRangeForWeek(0);
+  render();
+  setInterval(checkNotifications, 20000);
+}
+
+async function loadRangeForWeek(offset){
+  const today = startOfToday();
+  const ws = getWeekStart(today, offset);
+  const we = addDays(ws,6);
+  const streakStart = addDays(today,-90);
+  const minD = ws < streakStart ? ws : streakStart;
+  const maxD = we > today ? we : today;
+  const curMin = state.loadedMin ? new Date(state.loadedMin+'T00:00:00') : null;
+  const curMax = state.loadedMax ? new Date(state.loadedMax+'T00:00:00') : null;
+  const needMin = !curMin || minD < curMin;
+  const needMax = !curMax || maxD > curMax;
+  if(needMin || needMax){
+    const fetchMin = needMin ? minD : curMin;
+    const fetchMax = needMax ? maxD : curMax;
+    const data = await api.getDays(toISO(fetchMin), toISO(fetchMax));
+    Object.assign(state.cache, data);
+    state.loadedMin = toISO(!curMin || minD<curMin ? minD : curMin);
+    state.loadedMax = toISO(!curMax || maxD>curMax ? maxD : curMax);
+  }
+}
+async function ensureRangeCovered(startD, endD){
+  const needMin = !state.loadedMin || startD < new Date(state.loadedMin+'T00:00:00');
+  const needMax = !state.loadedMax || endD > new Date(state.loadedMax+'T00:00:00');
+  if(needMin || needMax){
+    const data = await api.getDays(toISO(startD), toISO(endD));
+    Object.assign(state.cache, data);
+    if(needMin) state.loadedMin = toISO(startD < new Date(state.loadedMin+'T00:00:00') ? startD : new Date(state.loadedMin+'T00:00:00'));
+    if(needMax) state.loadedMax = toISO(endD > new Date(state.loadedMax+'T00:00:00') ? endD : new Date(state.loadedMax+'T00:00:00'));
+  }
+}
+async function ensureDayLoaded(iso){
+  if(state.cache[iso]) return;
+  const data = await api.getDays(iso, iso);
+  Object.assign(state.cache, data);
+}
+async function saveDay(iso){ await api.putDay(iso, state.cache[iso]); }
+
+/* ---------------- feedback ---------------- */
+function hapticTick(){ if(navigator.vibrate) navigator.vibrate(12); }
+function playBlip(){
+  try{
+    const ctx = new (window.AudioContext||window.webkitAudioContext)();
+    const o = ctx.createOscillator(); const g = ctx.createGain();
+    o.type='sine'; o.frequency.value=880;
+    g.gain.setValueAtTime(0.06, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+0.18);
+    o.connect(g); g.connect(ctx.destination);
+    o.start(); o.stop(ctx.currentTime+0.18);
+  }catch(e){}
+}
+
+/* ---------------- actions ---------------- */
+async function selectDay(iso){ state.activeDate = iso; await ensureDayLoaded(iso); render(); }
+
+async function toggleItem(iso, id){
+  const day = state.cache[iso];
+  const it = day.items.find(x=>x.id===id);
+  if(!it) return;
+  const wasComplete = day.items.length>0 && day.items.every(i=>i.done);
+  it.done = !it.done;
+  hapticTick(); playBlip();
+  await saveDay(iso);
+  const nowComplete = day.items.length>0 && day.items.every(i=>i.done);
+  render();
+  if(!wasComplete && nowComplete) celebrate();
+}
+async function deleteItem(iso,id){ state.cache[iso].items = state.cache[iso].items.filter(x=>x.id!==id); await saveDay(iso); render(); }
+async function editItemText(iso,id,text){ const it=state.cache[iso].items.find(x=>x.id===id); if(it){ it.text=text; await saveDay(iso); } }
+async function editItemTime(iso,id,time){ const it=state.cache[iso].items.find(x=>x.id===id); if(it){ it.time=time; await saveDay(iso); render(); } }
+async function editItemDuration(iso,id,val){ const it=state.cache[iso].items.find(x=>x.id===id); if(it){ it.duration = val? parseInt(val,10) : null; await saveDay(iso); render(); } }
+async function togglePriority(iso,id){ const it=state.cache[iso].items.find(x=>x.id===id); if(it){ it.priority=!it.priority; await saveDay(iso); render(); } }
+async function cycleTag(iso,id){
+  const it = state.cache[iso].items.find(x=>x.id===id); if(!it) return;
+  const idx = TAGS.findIndex(t=>t.key===(it.tag||null));
+  it.tag = TAGS[(idx+1)%TAGS.length].key;
+  await saveDay(iso); render();
+}
+async function moveItem(iso,id,dir){
+  const items = state.cache[iso].items;
+  const idx = items.findIndex(x=>x.id===id);
+  const sw = idx+dir; if(sw<0||sw>=items.length) return;
+  [items[idx],items[sw]]=[items[sw],items[idx]];
+  await saveDay(iso); render();
+}
+async function addItem(iso, text){
+  if(!text.trim()) return;
+  state.cache[iso].items.push({id:uid(), text:text.trim(), done:false, priority:false, time:'', tag:null, duration:null});
+  await saveDay(iso); render();
+}
+async function editNote(iso, note){ state.cache[iso].note = note; await saveDay(iso); }
+async function copyYesterday(iso){
+  const y = toISO(addDays(new Date(iso+'T00:00:00'),-1));
+  await ensureDayLoaded(y);
+  const src = state.cache[y];
+  if(!src || src.items.length===0) return;
+  state.cache[iso].items = src.items.map(it=>({id:uid(), text:it.text, done:false, priority:it.priority, time:it.time, tag:it.tag||null, duration:it.duration||null}));
+  await saveDay(iso); render();
+}
+
+/* ---------------- streak / stats ---------------- */
+function computeStreak(){
+  const todayISO = toISO(startOfToday());
+  let cursor = new Date(todayISO+'T00:00:00');
+  const todayData = state.cache[todayISO];
+  const todayComplete = todayData && todayData.items.length>0 && todayData.items.every(i=>i.done);
+  if(!todayComplete) cursor = addDays(cursor,-1);
+  let streak=0, guard=0;
+  while(guard<120){
+    const iso = toISO(cursor);
+    const d = state.cache[iso];
+    if(!d) break;
+    if(d.items.length===0){ cursor=addDays(cursor,-1); guard++; continue; }
+    if(d.items.every(i=>i.done)){ streak++; cursor=addDays(cursor,-1); } else break;
+    guard++;
+  }
+  return streak;
+}
+function celebrate(){
+  const colors = ['#1F5E52','#C77B2E','#D99A2B','#3F7D63','#20261F'];
+  for(let i=0;i<24;i++){
+    const el = document.createElement('div');
+    el.className='confetti-piece';
+    el.style.left = (Math.random()*100)+'vw';
+    el.style.background = colors[i%colors.length];
+    el.style.animation = `confetti-fall ${0.9+Math.random()*0.7}s ease-in forwards`;
+    el.style.animationDelay = (Math.random()*0.2)+'s';
+    document.body.appendChild(el);
+    setTimeout(()=>el.remove(), 2000);
+  }
+}
+
+/* ---------------- notifications ---------------- */
+function checkNotifications(){
+  if(!('Notification' in window) || Notification.permission!=='granted') return;
+  const todayISO = toISO(startOfToday());
+  const day = state.cache[todayISO];
+  if(!day) return;
+  const now = new Date();
+  const hhmm = pad(now.getHours())+':'+pad(now.getMinutes());
+  day.items.forEach(it=>{
+    if(it.time && it.time===hhmm && !it.done && !state.notifiedToday.has(it.id)){
+      new Notification('یادآوری برنامه', {body: it.text});
+      state.notifiedToday.add(it.id);
+    }
+  });
+}
+async function enableNotifications(){ if('Notification' in window){ await Notification.requestPermission(); render(); } }
+
+/* ---------------- icons ---------------- */
+const ic = {
+  check:()=>`<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>`,
+  trash:()=>`<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>`,
+  gear:()=>`<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>`,
+  arrow:(dir)=>`<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="${dir==='right'?'M9 6l6 6-6 6':'M15 6l-6 6 6 6'}"/></svg>`,
+  flame:()=>`<svg viewBox="0 0 24 24" width="14" height="14" fill="var(--gold)" stroke="none"><path d="M12 2c1 3-3 4-3 8a3 3 0 0 0 6 0c0-1-1-2-1-3 2 1 4 4 4 7a6 6 0 0 1-12 0c0-4 2-6 3-8 1 2 1 3 1 4 1-2 2-5 2-8z"/></svg>`,
+  star:()=>`<svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" stroke="none"><path d="M12 2l2.9 6.5 7.1.6-5.4 4.7 1.6 7-6.2-3.9-6.2 3.9 1.6-7L2 9.1l7.1-.6z"/></svg>`,
+  up:()=>`<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M6 15l6-6 6 6"/></svg>`,
+  down:()=>`<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>`,
+  chart:()=>`<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 16l4-6 4 3 5-8"/></svg>`,
+  search:()=>`<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>`,
+  sun:()=>`<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>`,
+  moon:()=>`<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/></svg>`,
+  plus:()=>`<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>`,
+  target:()=>`<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="0.6" fill="currentColor"/></svg>`,
+  close:()=>`<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>`,
+};
+
+function formatRange(weekStart){
+  const end = addDays(weekStart,6);
+  const opt = {month:'short', day:'numeric'};
+  return `${weekStart.toLocaleDateString('fa-IR-u-ca-gregory',opt)} تا ${end.toLocaleDateString('fa-IR-u-ca-gregory',opt)}`;
+}
+
+/* ---------------- render ---------------- */
+function render(){
+  const app = document.getElementById('app');
+  if(!state.loaded){ app.innerHTML=''; return; }
+  if(!state.settings){ renderOnboarding(); return; }
+
+  const isDark = document.documentElement.getAttribute('data-theme')==='dark';
+  const today = startOfToday();
+  const weekStart = getWeekStart(today, state.weekOffset);
+  const days = Array.from({length:7},(_,i)=>addDays(weekStart,i));
+  const todayISO = toISO(today);
+  const activeDay = state.cache[state.activeDate];
+  const activeItems = (activeDay && activeDay.items) || [];
+  const activeNote = (activeDay && activeDay.note) || '';
+  const activeDow = jsDowToPersianIndex(new Date(state.activeDate+'T00:00:00').getDay());
+  const isFixed = state.settings.fixedWeekdays.includes(activeDow);
+  const doneCount = activeItems.filter(i=>i.done).length;
+  const total = activeItems.length;
+  const pct = total ? Math.round(doneCount/total*100) : 0;
+  const activeDateObj = new Date(state.activeDate+'T00:00:00');
+  const streak = computeStreak();
+  const yesterdayISO = toISO(addDays(activeDateObj,-1));
+  const hasYesterday = state.cache[yesterdayISO] && state.cache[yesterdayISO].items.length>0;
+  const remainingEstimate = activeItems.filter(i=>!i.done && i.duration).reduce((s,i)=>s+i.duration,0);
+
+  app.innerHTML = `
+    <header>
+      <div class="title-block">
+        <h1>برنامه هفته</h1>
+        <p>${formatRange(weekStart)}</p>
+      </div>
+      <div class="header-actions">
+        <button class="icon-btn" id="themeBtn" aria-label="حالت تاریک/روشن">${isDark?ic.sun():ic.moon()}</button>
+        <button class="icon-btn" id="searchBtn" aria-label="جستجو">${ic.search()}</button>
+        <button class="icon-btn" id="statsBtn" aria-label="آمار">${ic.chart()}</button>
+        <button class="icon-btn" id="settingsBtn" aria-label="تنظیمات">${ic.gear()}</button>
+      </div>
+    </header>
+
+    ${streak>0 ? `<div class="streak-pill">${ic.flame()} ${streak} روز پشت‌سرهم</div>` : ''}
+
+    <div class="week-nav">
+      <div class="nav-arrows">
+        <button id="prevWeek" aria-label="هفته قبل">${ic.arrow('right')}</button>
+        <button id="nextWeek" aria-label="هفته بعد">${ic.arrow('left')}</button>
+      </div>
+      <button class="icon-btn today-btn" id="todayBtn">امروز</button>
+    </div>
+
+    <div class="day-strip">
+      ${days.map((d,i)=>{
+        const iso = toISO(d);
+        const fixed = state.settings.fixedWeekdays.includes(i);
+        const isActive = iso===state.activeDate;
+        const isToday = iso===todayISO;
+        const items = state.cache[iso];
+        let barPct=0;
+        if(items && items.items.length) barPct = Math.round(items.items.filter(x=>x.done).length/items.items.length*100);
+        return `<div class="day-tab ${fixed?'is-fixed':''} ${isActive?'is-active':''} ${isToday?'is-today':''}" data-iso="${iso}">
+          <span class="wd">${WEEKDAYS_SHORT[i]}</span>
+          <span class="num">${d.getDate()}</span>
+          <span class="dot"></span>
+          <span class="bar"><i style="width:${barPct}%"></i></span>
+        </div>`;
+      }).join('')}
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <span class="day-name">${WEEKDAYS[activeDow]} ${activeDateObj.getDate()}</span>
+        <span class="chip ${isFixed?'fixed':'variable'}">${isFixed?'برنامه ثابت':'برنامه متغیر'}</span>
+      </div>
+
+      ${total>0 ? `
+      <div class="progress-row">
+        <div class="progress-track"><i style="width:${pct}%"></i></div>
+        <span class="progress-label">${doneCount} از ${total}</span>
+      </div>
+      ${remainingEstimate>0 ? `<div class="estimate-label">⏱ حدود ${remainingEstimate} دقیقه کار باقی‌مونده</div>` : ''}
+      ` : ''}
+
+      ${(!isFixed && total===0 && hasYesterday) ? `<button class="copy-yesterday" id="copyYestBtn">کپی برنامه از دیروز</button>` : ''}
+      ${total>0 ? `<button class="focus-btn" id="focusBtn">شروع حالت تمرکز</button>` : ''}
+
+      <div class="items">
+        ${activeItems.map((it,idx)=>{
+          const tg = tagOf(it.tag);
+          return `
+          <div class="item ${it.done?'done':''} ${it.priority?'priority':''}" data-id="${it.id}">
+            <div class="reorder-col">
+              <button data-action="up" data-id="${it.id}" ${idx===0?'disabled':''}>${ic.up()}</button>
+              <button data-action="down" data-id="${it.id}" ${idx===activeItems.length-1?'disabled':''}>${ic.down()}</button>
+            </div>
+            <div class="checkbox ${it.done?'checked':''}" data-action="toggle" data-id="${it.id}">${ic.check()}</div>
+            <div class="item-main">
+              <input class="item-text" data-action="edit" data-id="${it.id}" value="${escapeAttr(it.text)}" />
+              <div class="item-meta">
+                <input type="time" class="item-time" data-action="time" data-id="${it.id}" value="${it.time||''}" />
+                <input type="number" min="0" step="5" placeholder="دقیقه" class="item-duration" data-action="duration" data-id="${it.id}" value="${it.duration||''}" />
+                <div class="tag-dot" data-action="tag" data-id="${it.id}" title="${tg.label}" style="background:${tg.color==='transparent'?'transparent':tg.color}; border-color:${tg.color==='transparent'?'var(--border)':tg.color};"></div>
+              </div>
+            </div>
+            <div class="item-actions">
+              <button class="star-btn ${it.priority?'active':''}" data-action="priority" data-id="${it.id}">${ic.star()}</button>
+              <button class="item-del" data-action="delete" data-id="${it.id}">${ic.trash()}</button>
+            </div>
+          </div>
+        `;}).join('') || `
+          <div class="empty-state">
+            <p>${isFixed ? 'برای این روز آیتمی در برنامه ثابت تعریف نشده' : 'هنوز آیتمی اضافه نکردی'}</p>
+            <span>${isFixed ? 'از تنظیمات می‌تونی برنامه ثابت رو ویرایش کنی' : 'از پایین یک مورد اضافه کن'}</span>
+          </div>
+        `}
+      </div>
+
+      <textarea class="day-note" id="dayNote" placeholder="یادداشت کوتاه برای این روز…">${activeNote}</textarea>
+
+      <div class="add-row">
+        <input type="text" id="newItemInput" placeholder="مورد جدید برای این روز…" />
+        <button id="addItemBtn" aria-label="افزودن">${ic.plus()}</button>
+      </div>
+    </div>
+
+    <button class="fab" id="fabBtn" aria-label="افزودن سریع">${ic.plus()}</button>
+  `;
+
+  attachMainEvents();
+}
+
+function attachMainEvents(){
+  document.getElementById('themeBtn').onclick = toggleTheme;
+  document.getElementById('searchBtn').onclick = openSearch;
+  document.getElementById('statsBtn').onclick = ()=> openStats('heatmap');
+  document.getElementById('settingsBtn').onclick = openSettings;
+  document.getElementById('prevWeek').onclick = async ()=>{ state.weekOffset--; await loadRangeForWeek(state.weekOffset); render(); };
+  document.getElementById('nextWeek').onclick = async ()=>{ state.weekOffset++; await loadRangeForWeek(state.weekOffset); render(); };
+  document.getElementById('todayBtn').onclick = async ()=>{ state.weekOffset=0; await loadRangeForWeek(0); await selectDay(toISO(startOfToday())); };
+  document.getElementById('fabBtn').onclick = openQuickAdd;
+  document.querySelectorAll('.day-tab').forEach(el=> el.onclick = ()=> selectDay(el.dataset.iso));
+  document.querySelectorAll('[data-action="toggle"]').forEach(el=> el.onclick = ()=> toggleItem(state.activeDate, el.dataset.id));
+  document.querySelectorAll('[data-action="delete"]').forEach(el=> el.onclick = ()=> deleteItem(state.activeDate, el.dataset.id));
+  document.querySelectorAll('[data-action="priority"]').forEach(el=> el.onclick = ()=> togglePriority(state.activeDate, el.dataset.id));
+  document.querySelectorAll('[data-action="tag"]').forEach(el=> el.onclick = ()=> cycleTag(state.activeDate, el.dataset.id));
+  document.querySelectorAll('[data-action="up"]').forEach(el=> el.onclick = ()=> moveItem(state.activeDate, el.dataset.id, -1));
+  document.querySelectorAll('[data-action="down"]').forEach(el=> el.onclick = ()=> moveItem(state.activeDate, el.dataset.id, 1));
+  document.querySelectorAll('[data-action="edit"]').forEach(el=>{
+    el.onblur = ()=> editItemText(state.activeDate, el.dataset.id, el.value);
+    el.onkeydown = (e)=>{ if(e.key==='Enter') el.blur(); };
+  });
+  document.querySelectorAll('[data-action="time"]').forEach(el=> el.onchange = ()=> editItemTime(state.activeDate, el.dataset.id, el.value));
+  document.querySelectorAll('[data-action="duration"]').forEach(el=> el.onchange = ()=> editItemDuration(state.activeDate, el.dataset.id, el.value));
+  const copyBtn = document.getElementById('copyYestBtn');
+  if(copyBtn) copyBtn.onclick = ()=> copyYesterday(state.activeDate);
+  const focusBtnEl = document.getElementById('focusBtn');
+  if(focusBtnEl) focusBtnEl.onclick = ()=> startFocusMode(state.activeDate);
+  const noteEl = document.getElementById('dayNote');
+  noteEl.onblur = ()=> editNote(state.activeDate, noteEl.value);
+  const addBtn = document.getElementById('addItemBtn');
+  const addInput = document.getElementById('newItemInput');
+  const doAdd = ()=>{ addItem(state.activeDate, addInput.value); addInput.value=''; };
+  addBtn.onclick = doAdd;
+  addInput.onkeydown = (e)=>{ if(e.key==='Enter') doAdd(); };
+}
+
+/* ---------------- focus mode ---------------- */
+function startFocusMode(iso){
+  const items = state.cache[iso].items.filter(i=>!i.done);
+  if(items.length===0) return;
+  state.focusQueue = items.map(i=>i.id);
+  state.focusIdx = 0;
+  renderFocus(iso);
+}
+function renderFocus(iso){
+  const existing = document.getElementById('focusOverlay');
+  if(existing) existing.remove();
+  const overlay = document.createElement('div');
+  overlay.className='focus-overlay'; overlay.id='focusOverlay';
+  const remainingIds = state.focusQueue.filter(id=>{
+    const it = state.cache[iso].items.find(x=>x.id===id);
+    return it && !it.done;
+  });
+  state.focusQueue = remainingIds;
+  if(remainingIds.length===0){
+    overlay.innerHTML = `<button class="fo-close" id="focusClose">${ic.close()}</button><div class="fo-empty">🎉 همه‌چیز تمومه!</div>`;
+    document.body.appendChild(overlay);
+    document.getElementById('focusClose').onclick = ()=> overlay.remove();
+    return;
+  }
+  if(state.focusIdx>=remainingIds.length) state.focusIdx=0;
+  const currentId = remainingIds[state.focusIdx];
+  const it = state.cache[iso].items.find(x=>x.id===currentId);
+  overlay.innerHTML = `
+    <button class="fo-close" id="focusClose">${ic.close()}</button>
+    <div class="fo-progress">${state.focusIdx+1} از ${remainingIds.length}</div>
+    <div class="fo-text">${escapeAttr(it.text)}</div>
+    <div class="fo-actions">
+      <button class="fo-skip" id="focusSkip">بعدی</button>
+      <button class="fo-done" id="focusDone">انجام شد</button>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  document.getElementById('focusClose').onclick = ()=>{ overlay.remove(); render(); };
+  document.getElementById('focusSkip').onclick = ()=>{ state.focusIdx=(state.focusIdx+1)%remainingIds.length; renderFocus(iso); };
+  document.getElementById('focusDone').onclick = async ()=>{
+    await toggleItem(iso, currentId);
+    renderFocus(iso);
+  };
+}
+
+/* ---------------- quick add (FAB) ---------------- */
+function openQuickAdd(){
+  const overlay = document.createElement('div');
+  overlay.className='overlay';
+  const today = toISO(startOfToday());
+  const isToday = state.activeDate===today;
+  overlay.innerHTML = `
+    <div class="modal">
+      <h2>افزودن سریع</h2>
+      <p class="sub">این مورد به «${isToday?'امروز':WEEKDAYS[jsDowToPersianIndex(new Date(state.activeDate+'T00:00:00').getDay())]+' '+new Date(state.activeDate+'T00:00:00').getDate()}» اضافه می‌شه.</p>
+      <div class="add-row" style="border-top:none; padding-top:0;">
+        <input type="text" id="quickAddInput" placeholder="مثلاً: تماس با..." autofocus />
+        <button id="quickAddSubmit">${ic.plus()}</button>
+      </div>
+      <div class="modal-actions">
+        <button class="btn ghost" id="quickAddCancel">بستن</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  const input = document.getElementById('quickAddInput');
+  input.focus();
+  const submit = async ()=>{
+    if(input.value.trim()){ await addItem(state.activeDate, input.value); overlay.remove(); }
+  };
+  document.getElementById('quickAddSubmit').onclick = submit;
+  input.onkeydown = (e)=>{ if(e.key==='Enter') submit(); };
+  document.getElementById('quickAddCancel').onclick = ()=> overlay.remove();
+}
+
+/* ---------------- search ---------------- */
+async function openSearch(){
+  const overlay = document.createElement('div');
+  overlay.className='overlay';
+  overlay.innerHTML = `
+    <div class="modal">
+      <h2>جستجو در همه‌ی روزها</h2>
+      <div class="search-input-row">
+        <input type="text" id="searchInput" placeholder="چی رو دنبالشی؟" />
+      </div>
+      <div id="searchResults"></div>
+      <div class="modal-actions"><button class="btn ghost" id="closeSearch">بستن</button></div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  document.getElementById('closeSearch').onclick = ()=> overlay.remove();
+  const input = document.getElementById('searchInput');
+  const results = document.getElementById('searchResults');
+  input.focus();
+  let debounce;
+  input.oninput = ()=>{
+    clearTimeout(debounce);
+    debounce = setTimeout(async ()=>{
+      const q = input.value.trim();
+      if(!q){ results.innerHTML=''; return; }
+      const data = await api.search(q);
+      if(data.length===0){ results.innerHTML = `<div class="empty-state"><p>چیزی پیدا نشد</p></div>`; return; }
+      results.innerHTML = data.map(r=>{
+        const d = new Date(r.date+'T00:00:00');
+        return `<div class="search-result" data-date="${r.date}">
+          <span class="sr-text" style="${r.done?'text-decoration:line-through;color:var(--muted);':''}">${escapeAttr(r.text)}</span>
+          <span class="sr-date">${d.toLocaleDateString('fa-IR-u-ca-gregory',{month:'short',day:'numeric'})}</span>
+        </div>`;
+      }).join('');
+      results.querySelectorAll('.search-result').forEach(el=>{
+        el.onclick = async ()=>{
+          const iso = el.dataset.date;
+          const d = new Date(iso+'T00:00:00');
+          const weeksDiff = Math.round((getWeekStart(d,0) - getWeekStart(startOfToday(),0)) / (7*86400000));
+          state.weekOffset = weeksDiff;
+          await loadRangeForWeek(state.weekOffset);
+          await selectDay(iso);
+          overlay.remove();
+        };
+      });
+    }, 250);
+  };
+}
+
+/* ---------------- onboarding / settings ---------------- */
+let settingsDraft = null;
+
+function renderOnboarding(){
+  settingsDraft = {fixedWeekdays:[], template:{}, recurring:[]};
+  document.getElementById('app').innerHTML = '';
+  renderSettingsModal(true);
+}
+function openSettings(){
+  settingsDraft = JSON.parse(JSON.stringify(state.settings));
+  if(!settingsDraft.recurring) settingsDraft.recurring = [];
+  renderSettingsModal(false);
+}
+
+function renderSettingsModal(isOnboarding){
+  const existing = document.getElementById('settingsOverlay');
+  if(existing) existing.remove();
+  const overlay = document.createElement('div');
+  overlay.className='overlay'; overlay.id='settingsOverlay';
+  const selected = settingsDraft.fixedWeekdays;
+  const notifOn = ('Notification' in window) && Notification.permission==='granted';
+  overlay.innerHTML = `
+    <div class="modal">
+      <h2>${isOnboarding?'بیایید برنامه رو بچینیم':'تنظیمات'}</h2>
+      <p class="sub">هر چند روز از هفته که برنامه‌ی همیشگی دارن رو انتخاب کن — می‌تونه ۲ روز باشه، ۵ روز، یا هر تعداد دیگه‌ای. بقیه‌ی روزها متغیر می‌مونن.</p>
+      <div class="weekday-grid" id="weekdayGrid">
+        ${WEEKDAYS.map((w,i)=>{
+          const sel = selected.includes(i);
+          return `<div class="weekday-pill ${sel?'selected':''}" data-i="${i}">${w}</div>`;
+        }).join('')}
+      </div>
+      <div id="templateArea"></div>
+
+      ${!isOnboarding ? `
+      <div class="section-title">آیتم‌های تکرارشونده</div>
+      <p class="sub">مستقل از روزهای ثابت؛ مثلاً هر ۱۴ روز یا هر ۳۰ روز یک‌بار.</p>
+      <div id="recurringArea"></div>
+
+      <div class="section-title">کپی الگوی این هفته</div>
+      <p class="sub">آیتم‌های روزهای متغیرِ همین هفته رو به چند هفته‌ی بعد کپی کن.</p>
+      <div class="row-actions" style="margin-bottom:16px;">
+        <input type="number" min="1" max="12" value="4" class="small-input" id="copyWeeksCount" style="width:70px;">
+        <button class="btn ghost" id="copyWeeksBtn" style="flex:1;">کپی به چند هفته بعد</button>
+      </div>
+
+      <div class="section-title">یادآوری ساعتی</div>
+      <div class="notif-row">
+        <span>یادآوری آیتم‌های زمان‌دار</span>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="notif-status ${notifOn?'on':''}">${notifOn?'فعال':'غیرفعال'}</span>
+          <button class="icon-btn" id="notifBtn" style="width:32px;height:32px;" aria-label="فعال‌سازی یادآوری">🔔</button>
+        </div>
+      </div>
+
+      <div class="section-title">پشتیبان‌گیری</div>
+      <div class="row-actions" style="margin-bottom:6px;">
+        <button class="btn ghost" id="exportBtn">خروجی گرفتن (دانلود)</button>
+        <button class="btn ghost" id="importBtn">وارد کردن فایل</button>
+      </div>
+      <input type="file" id="importFile" accept="application/json" style="display:none;">
+      ` : ''}
+
+      <div class="modal-actions">
+        ${isOnboarding?'':'<button class="btn ghost" id="cancelSettings">انصراف</button>'}
+        <button class="btn primary" id="saveSettings" ${isOnboarding && selected.length===0?'disabled':''}>${isOnboarding?'شروع کن':'ذخیره'}</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  renderTemplateArea();
+  if(!isOnboarding) renderRecurringArea();
+
+  overlay.querySelectorAll('.weekday-pill').forEach(el=>{
+    el.onclick = ()=>{
+      const i = parseInt(el.dataset.i);
+      const idx = settingsDraft.fixedWeekdays.indexOf(i);
+      if(idx>-1){ settingsDraft.fixedWeekdays.splice(idx,1); delete settingsDraft.template[i]; }
+      else { settingsDraft.fixedWeekdays.push(i); settingsDraft.template[i] = settingsDraft.template[i]||[]; }
+      renderSettingsModal(isOnboarding);
+    };
+  });
+  const cancelBtn = document.getElementById('cancelSettings');
+  if(cancelBtn) cancelBtn.onclick = ()=> overlay.remove();
+  const notifBtn = document.getElementById('notifBtn');
+  if(notifBtn) notifBtn.onclick = async ()=>{ await enableNotifications(); renderSettingsModal(isOnboarding); };
+
+  const exportBtn = document.getElementById('exportBtn');
+  if(exportBtn) exportBtn.onclick = async ()=>{
+    const data = await api.exportData();
+    const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'planner-backup.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+  };
+  const importBtn = document.getElementById('importBtn');
+  const importFile = document.getElementById('importFile');
+  if(importBtn) importBtn.onclick = ()=> importFile.click();
+  if(importFile) importFile.onchange = async ()=>{
+    const file = importFile.files[0]; if(!file) return;
+    try{
+      const text = await file.text();
+      const data = JSON.parse(text);
+      await api.importData(data);
+      overlay.remove();
+      state.cache = {}; state.loadedMin=null; state.loadedMax=null;
+      state.settings = await api.getSettings();
+      await loadRangeForWeek(state.weekOffset);
+      render();
+    }catch(e){ alert('فایل نامعتبره'); }
+  };
+
+  const copyWeeksBtn = document.getElementById('copyWeeksBtn');
+  if(copyWeeksBtn) copyWeeksBtn.onclick = async ()=>{
+    const n = parseInt(document.getElementById('copyWeeksCount').value,10) || 1;
+    overlay.remove();
+    await copyWeekPattern(n);
+  };
+
+  document.getElementById('saveSettings').onclick = async ()=>{
+    if(isOnboarding && settingsDraft.fixedWeekdays.length===0) return;
+    state.settings = JSON.parse(JSON.stringify(settingsDraft));
+    await api.putSettings(state.settings);
+    overlay.remove();
+    state.cache = {}; state.loadedMin=null; state.loadedMax=null;
+    await loadRangeForWeek(state.weekOffset);
+    render();
+  };
+}
+
+function renderTemplateArea(){
+  const area = document.getElementById('templateArea');
+  if(!area) return;
+  const sorted = [...settingsDraft.fixedWeekdays].sort((a,b)=>a-b);
+  if(sorted.length===0){ area.innerHTML=''; return; }
+  area.innerHTML = sorted.map(dow=>{
+    const items = settingsDraft.template[dow]||[];
+    return `
+      <div class="template-block" data-dow="${dow}">
+        <div class="tb-title">آیتم‌های ثابت ${WEEKDAYS[dow]}</div>
+        <div class="items" style="margin-bottom:8px;">
+          ${items.map((it,idx)=>`
+            <div class="item">
+              <div class="checkbox" style="cursor:default;"></div>
+              <input class="item-text" data-tdow="${dow}" data-idx="${idx}" value="${escapeAttr(it.text)}" />
+              <button class="item-del" data-tdow="${dow}" data-idx="${idx}" data-del="1">${ic.trash()}</button>
+            </div>
+          `).join('') || '<span style="font-size:12px;color:var(--muted);">هنوز آیتمی اضافه نشده</span>'}
+        </div>
+        <div class="add-row" style="border-top:none;padding-top:0;">
+          <input type="text" placeholder="آیتم جدید…" data-tmpl-input="${dow}" />
+          <button data-tmpl-add="${dow}">${ic.plus()}</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  area.querySelectorAll('[data-tmpl-add]').forEach(btn=>{
+    btn.onclick = ()=>{
+      const dow = parseInt(btn.dataset.tmplAdd);
+      const input = area.querySelector(`[data-tmpl-input="${dow}"]`);
+      if(input.value.trim()){
+        settingsDraft.template[dow] = settingsDraft.template[dow]||[];
+        settingsDraft.template[dow].push({id: uid(), text: input.value.trim(), time:'', priority:false, tag:null, duration:null});
+        renderTemplateArea();
+      }
+    };
+  });
+  area.querySelectorAll('[data-tmpl-input]').forEach(input=>{
+    input.onkeydown = (e)=>{
+      if(e.key==='Enter'){
+        const dow = parseInt(input.dataset.tmplInput);
+        if(input.value.trim()){
+          settingsDraft.template[dow] = settingsDraft.template[dow]||[];
+          settingsDraft.template[dow].push({id: uid(), text: input.value.trim(), time:'', priority:false, tag:null, duration:null});
+          renderTemplateArea();
+        }
+      }
+    };
+  });
+  area.querySelectorAll('[data-del]').forEach(btn=>{
+    btn.onclick = ()=>{
+      const dow = parseInt(btn.dataset.tdow), idx = parseInt(btn.dataset.idx);
+      settingsDraft.template[dow].splice(idx,1);
+      renderTemplateArea();
+    };
+  });
+  area.querySelectorAll('.item-text[data-tdow]').forEach(input=>{
+    input.onblur = ()=>{
+      const dow = parseInt(input.dataset.tdow), idx = parseInt(input.dataset.idx);
+      settingsDraft.template[dow][idx].text = input.value;
+    };
+  });
+}
+
+function renderRecurringArea(){
+  const area = document.getElementById('recurringArea');
+  if(!area) return;
+  const list = settingsDraft.recurring || [];
+  area.innerHTML = `
+    <div class="items" style="margin-bottom:10px;">
+      ${list.map((r,idx)=>`
+        <div class="item">
+          <div class="checkbox" style="cursor:default;"></div>
+          <input class="item-text" data-recidx="${idx}" data-field="text" value="${escapeAttr(r.text)}" placeholder="نام آیتم" />
+          <input type="number" min="1" class="small-input" style="width:56px;" data-recidx="${idx}" data-field="everyDays" value="${r.everyDays}" title="هر چند روز">
+          <button class="item-del" data-recdel="${idx}">${ic.trash()}</button>
+        </div>
+      `).join('') || '<span style="font-size:12px;color:var(--muted);">هنوز آیتم تکرارشونده‌ای نداری</span>'}
+    </div>
+    <div class="add-row" style="border-top:none;padding-top:0;">
+      <input type="text" placeholder="مثلاً: کوتاه کردن ناخن" id="newRecText" />
+      <input type="number" min="1" class="small-input" style="width:56px;" id="newRecEvery" placeholder="روز" value="14">
+      <button id="addRecBtn">${ic.plus()}</button>
+    </div>
+  `;
+  area.querySelectorAll('[data-recidx]').forEach(el=>{
+    el.onchange = ()=>{
+      const idx = parseInt(el.dataset.recidx), field = el.dataset.field;
+      settingsDraft.recurring[idx][field] = field==='everyDays' ? (parseInt(el.value,10)||1) : el.value;
+    };
+  });
+  area.querySelectorAll('[data-recdel]').forEach(btn=>{
+    btn.onclick = ()=>{ settingsDraft.recurring.splice(parseInt(btn.dataset.recdel),1); renderRecurringArea(); };
+  });
+  document.getElementById('addRecBtn').onclick = ()=>{
+    const textEl = document.getElementById('newRecText');
+    const everyEl = document.getElementById('newRecEvery');
+    if(!textEl.value.trim()) return;
+    settingsDraft.recurring.push({
+      id: uid(), text: textEl.value.trim(), everyDays: parseInt(everyEl.value,10)||14,
+      anchorDate: toISO(startOfToday()), priority:false, time:'', tag:null, duration:null
+    });
+    renderRecurringArea();
+  };
+}
+
+async function copyWeekPattern(weeks){
+  const today = startOfToday();
+  const weekStart = getWeekStart(today, state.weekOffset);
+  for(let i=0;i<7;i++){
+    if(state.settings.fixedWeekdays.includes(i)) continue;
+    const sourceISO = toISO(addDays(weekStart,i));
+    await ensureDayLoaded(sourceISO);
+    const src = state.cache[sourceISO];
+    if(!src || src.items.length===0) continue;
+    for(let w=1; w<=weeks; w++){
+      const targetISO = toISO(addDays(weekStart, i + w*7));
+      await ensureDayLoaded(targetISO);
+      state.cache[targetISO].items = src.items.map(it=>({id:uid(), text:it.text, done:false, priority:it.priority, time:it.time, tag:it.tag||null, duration:it.duration||null}));
+      await saveDay(targetISO);
+    }
+  }
+  render();
+}
+
+/* ---------------- stats hub: heatmap / trend / compare / insights / history ---------------- */
+async function openStats(view){
+  const today = startOfToday();
+  await ensureRangeCovered(addDays(today,-89), today);
+  renderStatsModal(view);
+}
+
+function renderStatsModal(view){
+  const existing = document.getElementById('statsOverlay');
+  if(existing) existing.remove();
+  const overlay = document.createElement('div');
+  overlay.className='overlay'; overlay.id='statsOverlay';
+  const tabs = [
+    {key:'heatmap', label:'تقویم'},
+    {key:'trend', label:'روند'},
+    {key:'compare', label:'مقایسه هفته‌ها'},
+    {key:'insights', label:'روزهای هفته'},
+    {key:'history', label:'تاریخچه'},
+  ];
+  overlay.innerHTML = `
+    <div class="modal">
+      <h2>آمار</h2>
+      <div class="tabs">
+        ${tabs.map(t=>`<button class="tab-btn ${t.key===view?'active':''}" data-tab="${t.key}">${t.label}</button>`).join('')}
+      </div>
+      <div id="statsBody"></div>
+      <div class="modal-actions"><button class="btn primary" id="closeStats">بستن</button></div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  document.getElementById('closeStats').onclick = ()=> overlay.remove();
+  overlay.querySelectorAll('[data-tab]').forEach(btn=> btn.onclick = ()=> renderStatsModal(btn.dataset.tab));
+  const body = document.getElementById('statsBody');
+  if(view==='heatmap') body.innerHTML = statsHeatmapHTML();
+  else if(view==='trend') body.innerHTML = statsTrendHTML();
+  else if(view==='compare') body.innerHTML = statsCompareHTML();
+  else if(view==='insights') body.innerHTML = statsInsightsHTML();
+  else if(view==='history') { body.innerHTML = statsHistoryHTML('all'); attachHistoryEvents(overlay); }
+}
+
+function statsHeatmapHTML(){
+  const today = startOfToday();
+  const start = addDays(today,-34);
+  const cells = [];
+  for(let i=0;i<35;i++){
+    const iso = toISO(addDays(start,i));
+    const day = state.cache[iso];
+    let pct = null;
+    if(day && day.items.length) pct = day.items.filter(x=>x.done).length/day.items.length;
+    const bg = pct===null ? 'var(--paper)' : `color-mix(in srgb, var(--done) ${Math.round(15+pct*75)}%, var(--paper))`;
+    cells.push(`<div class="heat-cell" style="background:${bg}" title="${iso}"></div>`);
+  }
+  return `
+    <p class="sub">هر خانه یک روزه؛ رنگ پررنگ‌تر یعنی درصد تکمیل بیشتر (۵ هفته اخیر).</p>
+    <div class="heat-labels">${WEEKDAYS_SHORT.map(w=>`<span>${w}</span>`).join('')}</div>
+    <div class="heatmap-grid">${cells.join('')}</div>
+  `;
+}
+
+function statsTrendHTML(){
+  const today = startOfToday();
+  const days = 30;
+  const points = [];
+  for(let i=days-1;i>=0;i--){
+    const iso = toISO(addDays(today,-i));
+    const day = state.cache[iso];
+    const pct = day && day.items.length ? Math.round(day.items.filter(x=>x.done).length/day.items.length*100) : null;
+    points.push(pct);
+  }
+  const w=280, h=110, padY=10;
+  const validPts = points.map((p,i)=>({p,i})).filter(o=>o.p!==null);
+  let pathD = '';
+  if(validPts.length>1){
+    pathD = validPts.map((o,idx)=>{
+      const x = (o.i/(days-1))*w;
+      const y = padY + (100-o.p)/100*(h-padY*2);
+      return `${idx===0?'M':'L'}${x.toFixed(1)},${y.toFixed(1)}`;
+    }).join(' ');
+  }
+  const dots = validPts.map(o=>{
+    const x = (o.i/(days-1))*w;
+    const y = padY + (100-o.p)/100*(h-padY*2);
+    return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.2" fill="var(--fixed)"/>`;
+  }).join('');
+  return `
+    <p class="sub">درصد تکمیل روزانه در ۳۰ روز اخیر.</p>
+    <svg viewBox="0 0 ${w} ${h}" style="width:100%; height:130px; overflow:visible;">
+      <line x1="0" y1="${h-padY}" x2="${w}" y2="${h-padY}" stroke="var(--border)" stroke-width="1"/>
+      ${pathD ? `<path d="${pathD}" fill="none" stroke="var(--fixed)" stroke-width="2.2"/>` : ''}
+      ${dots}
+    </svg>
+  `;
+}
+
+function statsCompareHTML(){
+  const today = startOfToday();
+  function weekStats(offset){
+    const ws = getWeekStart(today, offset);
+    let done=0, total=0;
+    for(let i=0;i<7;i++){
+      const iso = toISO(addDays(ws,i));
+      const day = state.cache[iso];
+      if(day){ total += day.items.length; done += day.items.filter(x=>x.done).length; }
+    }
+    return {done, total, pct: total? Math.round(done/total*100):0, label: formatRange(ws)};
+  }
+  const thisWeek = weekStats(0);
+  const lastWeek = weekStats(-1);
+  return `
+    <p class="sub">هفته‌ی جاری در برابر هفته‌ی قبل.</p>
+    <div class="summary-row">
+      <div class="sr-head"><span>این هفته (${thisWeek.label})</span><span>${thisWeek.done} از ${thisWeek.total}</span></div>
+      <div class="summary-track"><i style="width:${thisWeek.pct}%; background:var(--fixed);"></i></div>
+    </div>
+    <div class="summary-row">
+      <div class="sr-head"><span>هفته‌ی قبل (${lastWeek.label})</span><span>${lastWeek.done} از ${lastWeek.total}</span></div>
+      <div class="summary-track"><i style="width:${lastWeek.pct}%; background:var(--variable);"></i></div>
+    </div>
+  `;
+}
+
+function statsInsightsHTML(){
+  const sums = Array.from({length:7},()=>({done:0,total:0}));
+  Object.keys(state.cache).forEach(iso=>{
+    const day = state.cache[iso];
+    if(!day || day.items.length===0) return;
+    const dow = jsDowToPersianIndex(new Date(iso+'T00:00:00').getDay());
+    sums[dow].total += day.items.length;
+    sums[dow].done += day.items.filter(x=>x.done).length;
+  });
+  return `
+    <p class="sub">میانگین درصد تکمیل به تفکیک روز هفته (۹۰ روز اخیر).</p>
+    ${sums.map((s,i)=>{
+      const pct = s.total? Math.round(s.done/s.total*100):0;
+      return `<div class="insight-row">
+        <span class="wd-label">${WEEKDAYS[i]}</span>
+        <div class="track"><i style="width:${pct}%"></i></div>
+        <span class="val">${s.total?pct+'%':'—'}</span>
+      </div>`;
+    }).join('')}
+  `;
+}
+
+function statsHistoryHTML(filter){
+  const today = startOfToday();
+  const rows = [];
+  for(let i=0;i<60;i++){
+    const iso = toISO(addDays(today,-i));
+    const day = state.cache[iso];
+    if(!day || day.items.length===0) continue;
+    const done = day.items.filter(x=>x.done).length, total = day.items.length;
+    const complete = done===total;
+    if(filter==='complete' && !complete) continue;
+    if(filter==='incomplete' && complete) continue;
+    rows.push({iso, done, total});
+  }
+  return `
+    <div class="tabs" style="margin-bottom:12px;">
+      <button class="tab-btn ${filter==='all'?'active':''}" data-hfilter="all">همه</button>
+      <button class="tab-btn ${filter==='complete'?'active':''}" data-hfilter="complete">کامل‌شده</button>
+      <button class="tab-btn ${filter==='incomplete'?'active':''}" data-hfilter="incomplete">ناقص</button>
+    </div>
+    <div class="history-list">
+      ${rows.map(r=>{
+        const d = new Date(r.iso+'T00:00:00');
+        return `<div class="history-item" data-date="${r.iso}">
+          <span class="h-date">${WEEKDAYS[jsDowToPersianIndex(d.getDay())]} ${d.toLocaleDateString('fa-IR-u-ca-gregory',{month:'short',day:'numeric'})}</span>
+          <span class="h-stat">${r.done} از ${r.total}</span>
+        </div>`;
+      }).join('') || '<div class="empty-state"><p>چیزی برای نمایش نیست</p></div>'}
+    </div>
+  `;
+}
+function attachHistoryEvents(overlay){
+  const body = document.getElementById('statsBody');
+  body.querySelectorAll('[data-hfilter]').forEach(btn=>{
+    btn.onclick = ()=>{ body.innerHTML = statsHistoryHTML(btn.dataset.hfilter); attachHistoryEvents(overlay); };
+  });
+  body.querySelectorAll('.history-item').forEach(el=>{
+    el.onclick = async ()=>{
+      const iso = el.dataset.date;
+      const d = new Date(iso+'T00:00:00');
+      const weeksDiff = Math.round((getWeekStart(d,0) - getWeekStart(startOfToday(),0)) / (7*86400000));
+      state.weekOffset = weeksDiff;
+      await loadRangeForWeek(state.weekOffset);
+      await selectDay(iso);
+      overlay.remove();
+    };
+  });
+}
+
+init();
+</script>
+</body>
+</html>
